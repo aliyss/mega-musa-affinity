@@ -1,0 +1,882 @@
+/*
+ * Copyright (C) 2026 Sphericals
+ * SPDX-License-Identifier: GPL-3.0-only WITH GPL-3.0-linking-exception
+ * Affinity edition: see LICENSE-EXCEPTION.
+ *
+ * One dark app shell: a settings rail, a work stage whose Generate bar stays
+ * pinned, and a history column. Each region scrolls on its own so nothing is
+ * ever clipped out of reach.
+ */
+
+:root {
+  color-scheme: dark;
+  --bg: #171614;
+  --surface: #201e1b;
+  --surface-raised: #2a2724;
+  --field: #141312;
+  --border: #322e2a;
+  --border-strong: #453f38;
+  --text: #ece7e1;
+  --dim: #b3aba1;
+  --faint: #837b72;
+  --accent: #f0a02a;
+  --accent-soft: rgba(240, 160, 42, 0.15);
+  --accent-text: #1c1406;
+  --ok: #7ecb8f;
+  --error: #ff8d7d;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#panel {
+  width: min(100%, 480px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- App bar -------------------------------------------------------------- */
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0 4px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: linear-gradient(150deg, #f8b944, #d9821a);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.brand-text h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.brand-sub {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--faint);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* --- Cards ---------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.card > summary::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-right: 1.5px solid var(--faint);
+  border-bottom: 1.5px solid var(--faint);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+.card[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.card[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.card > summary:hover {
+  color: var(--accent);
+}
+
+.card-head,
+.pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-head h2,
+.pane-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 13px;
+}
+
+.count {
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.cost-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+/* --- Fields --------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* auto-fit collapses to one column when Quality is hidden for Gemini models. */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row.spread {
+  justify-content: space-between;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--faint);
+}
+
+.hint {
+  margin: 0;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.muted {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.kbd {
+  white-space: nowrap;
+}
+
+input[type="text"],
+input[type="password"],
+input:not([type]),
+select,
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6d655d;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+
+/* Sized so a button beside a field lines up with it (see the height check). */
+button {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+button:hover:not(:disabled) {
+  background: #322e2a;
+  border-color: var(--border-strong);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  border-color: var(--border-strong);
+}
+
+button.quiet {
+  padding: 5px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--dim);
+}
+
+button.quiet:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: transparent;
+  color: var(--text);
+}
+
+button.cta {
+  width: 100%;
+  padding: 12px 16px;
+  border-color: #f0a02a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8b944, #e8921d);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 16px -10px rgba(240, 160, 42, 0.9);
+}
+
+button.cta:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffc65a, #f0a02a);
+  border-color: #ffc65a;
+}
+
+button.wide {
+  width: 100%;
+}
+
+/* --- Switch --------------------------------------------------------------- */
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switch-track {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  flex: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--field);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--faint);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.switch input:checked + .switch-track::after {
+  background: var(--accent);
+  transform: translateX(15px);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.switch-text {
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.switch.compact .switch-text {
+  font-size: 11px;
+}
+
+/* --- Rail and stage -------------------------------------------------------
+   Both are independent scroll regions with one spacing scale: 12px between
+   cards, 13px horizontal inset inside every card. */
+
+.rail,
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* Expanded content must grow the column, never shrink its neighbours: a card
+   keeps its own height and the scroll container takes the overflow. */
+.rail > *,
+.stage > *,
+.queue > *,
+.history > * {
+  flex: none;
+}
+
+.composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.describe-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.describe-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0 6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -10px 18px -12px #000;
+}
+
+.status {
+  min-height: 18px;
+  color: var(--dim);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.status.ok {
+  color: var(--ok);
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.note {
+  color: var(--faint);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* --- Queue and history ---------------------------------------------------- */
+
+.queue,
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.queue {
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.history-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.history-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 13px 13px;
+}
+
+/* --- Result card (queue and history share it) ----------------------------- */
+
+.job {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.job-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--faint);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.job-head span:last-child {
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.job-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.job-thumb {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field);
+}
+
+.job-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-prompt {
+  font-size: 12.5px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.job-status {
+  color: var(--dim);
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.job-actions button {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 550;
+}
+
+.job-actions button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.job-running {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.job-done .job-status {
+  color: var(--ok);
+}
+
+.job-done .job-head span:last-child {
+  border-color: rgba(126, 203, 143, 0.4);
+  color: var(--ok);
+}
+
+.job-failed .job-status,
+.job-cancelled .job-status {
+  color: var(--error);
+}
+
+.job-failed .job-head span:last-child,
+.job-cancelled .job-head span:last-child {
+  border-color: rgba(255, 141, 125, 0.4);
+  color: var(--error);
+}
+
+.info-line {
+  color: var(--faint);
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 104px;
+  padding: 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--faint);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+/* --- Images in ------------------------------------------------------------ */
+
+.drop-zone {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--field);
+  color: var(--faint);
+  font-size: 11.5px;
+  text-align: center;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.drop-zone.compact {
+  min-height: 50px;
+  padding: 10px;
+}
+
+.drop-zone.dragging,
+.drop-zone:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  outline: none;
+}
+
+.drop-zone img {
+  max-width: 100%;
+  max-height: 190px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.thumb {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--field);
+  overflow: hidden;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.thumb button:hover:not(:disabled) {
+  background: var(--error);
+  color: var(--accent-text);
+}
+
+/* --- Footer and scrollbars ------------------------------------------------ */
+
+.footer {
+  padding: 2px 0 6px;
+  color: var(--faint);
+  font-size: 10px;
+  text-align: center;
+  word-break: break-all;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--border-strong);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #56504a;
+  background-clip: content-box;
+}
+
+/* --- Desktop -------------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  #panel {
+    width: min(100%, 1320px);
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 316px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1.6fr) minmax(170px, 0.7fr) auto;
+    grid-template-areas:
+      "bar bar"
+      "rail stage"
+      "rail history"
+      "footer footer";
+    gap: 12px;
+  }
+
+  .app-bar {
+    grid-area: bar;
+  }
+
+  .rail {
+    grid-area: rail;
+  }
+
+  .stage {
+    grid-area: stage;
+  }
+
+  .history-pane {
+    grid-area: history;
+  }
+
+  .footer {
+    grid-area: footer;
+    padding: 0;
+    text-align: left;
+  }
+
+  .rail,
+  .stage,
+  .history-pane {
+    min-height: 0;
+  }
+
+  /* scrollbar-gutter reserves the bar's width, so no extra inset is needed. */
+  .rail,
+  .stage {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  /* The stage scrolls; the Generate bar stays on screen. */
+  .action-bar {
+    margin-top: auto;
+  }
+
+  .history-scroll {
+    scrollbar-gutter: stable;
+  }
+}
+
+@media (min-width: 1240px) {
+  #panel {
+    grid-template-columns: 320px minmax(0, 1fr) 380px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "bar bar bar"
+      "rail stage history"
+      "footer footer footer";
+  }
+
+  .queue {
+    max-height: 240px;
+  }
+}

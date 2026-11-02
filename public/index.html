@@ -1,0 +1,218 @@
+<!--
+Copyright (C) 2026 Sphericals
+SPDX-License-Identifier: GPL-3.0-only WITH GPL-3.0-linking-exception
+Affinity edition: see LICENSE-EXCEPTION.
+
+This file is part of Mega Musa.
+
+Mega Musa is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+Mega Musa is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Mega Musa. If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mega Musa — Affinity</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <main id="panel">
+    <header class="app-bar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">M</span>
+        <div class="brand-text">
+          <h1>Mega Musa</h1>
+          <span class="brand-sub">Affinity edition</span>
+        </div>
+      </div>
+      <span id="connectionBadge" class="badge">local</span>
+    </header>
+
+    <!-- Settings rail ---------------------------------------------------- -->
+    <aside class="rail" aria-label="Settings">
+      <details class="card" open>
+        <summary>Model</summary>
+        <div class="card-body">
+          <div class="field">
+            <label class="label" for="model">Model</label>
+            <select id="model"></select>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="label" for="resolution">Resolution</label>
+              <select id="resolution"></select>
+            </div>
+            <div id="qualityField" class="field">
+              <label class="label" for="quality">Quality</label>
+              <select id="quality"></select>
+            </div>
+          </div>
+          <div id="modelOptions"></div>
+          <div class="cost-line">
+            <span id="budgetTotal" class="muted">Spent: &mdash;</span>
+            <button id="resetBudget" class="quiet">Reset</button>
+          </div>
+          <div id="budgetCounts" class="muted"></div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary>API keys</summary>
+        <div class="card-body">
+          <div class="field">
+            <label class="label" for="geminiKey">Google Gemini</label>
+            <div class="row">
+              <input id="geminiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Gemini API key" />
+              <button id="saveGeminiKey" class="primary">Save</button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="openaiKey">OpenAI</label>
+            <div class="row">
+              <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="OpenAI API key" />
+              <button id="saveOpenAIKey" class="primary">Save</button>
+            </div>
+          </div>
+          <p class="hint">Only the selected model's key is ever sent. Keys stay on this machine.</p>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary>Placement</summary>
+        <div class="card-body">
+          <label class="switch">
+            <input id="autoPlace" type="checkbox" />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">Place results automatically</span>
+          </label>
+          <p class="hint">Needs <b>Help → AI Automation</b> in Affinity. Adds each result as a layer on the current spread of the open document.</p>
+          <div class="field">
+            <label class="label" for="affinityApp">App name for “Open in Affinity”</label>
+            <input id="affinityApp" spellcheck="false" placeholder="Affinity" />
+          </div>
+        </div>
+      </details>
+
+      <details class="card">
+        <summary>Currency</summary>
+        <div class="card-body">
+          <select id="displayCurrency"></select>
+          <div id="currencyNote" class="hint"></div>
+        </div>
+      </details>
+
+      <details class="card" open>
+        <summary>Aspect ratio</summary>
+        <div class="card-body">
+          <div class="row">
+            <select id="ratio" class="grow"></select>
+            <button id="fitCanvas">Fit canvas</button>
+          </div>
+          <p class="hint">The output is generated at a supported ratio. <b>Fit canvas</b> matches the pasted copy.</p>
+        </div>
+      </details>
+    </aside>
+
+    <!-- Work stage -------------------------------------------------------- -->
+    <section class="stage" aria-label="Generation">
+      <section class="card">
+        <div class="card-head">
+          <h2>Canvas</h2>
+          <div class="row">
+            <button id="pasteCanvas" class="primary">Paste</button>
+            <button id="clearCanvas" class="quiet">Clear</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="canvasZone" class="drop-zone" tabindex="0">
+            <img id="canvasPreview" alt="" hidden />
+            <div id="canvasInfo" class="muted">Copy a region in Affinity, then paste here (⌘V / Ctrl+V) or drop an image.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>References <span id="refCount" class="count">0/10</span></h2>
+          <div class="row">
+            <button id="addRefs" class="primary">Add files</button>
+            <button id="pasteRef" class="quiet">Paste</button>
+            <button id="clearRefs" class="quiet">Clear</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <input id="refFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+          <div id="referencesZone" class="drop-zone compact" tabindex="0">Drag PNG, JPEG or WebP files here</div>
+          <div id="thumbs" class="thumbs"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Prompt</h2>
+          <label class="switch compact">
+            <input id="includeCanvas" type="checkbox" checked />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">Canvas</span>
+          </label>
+        </div>
+        <div class="card-body">
+          <textarea id="prompt" rows="4" placeholder="Describe the change to make…"></textarea>
+          <div class="composer-foot">
+            <span id="expandNote" class="hint"></span>
+            <span class="hint kbd">⌘↵ to generate</span>
+          </div>
+          <div class="describe-row">
+            <select id="describeModel" aria-label="Describe model"></select>
+            <button id="describe" class="primary">Describe images</button>
+          </div>
+          <p class="hint">Describe turns the canvas and references into a ready-to-edit prompt, replacing the current text.</p>
+        </div>
+      </section>
+
+      <div class="action-bar">
+        <button id="generate" class="cta">Generate</button>
+        <div id="status" class="status" aria-live="polite">Loading…</div>
+        <div id="note" class="note"></div>
+      </div>
+
+      <section id="queueBlock" class="card queue-card">
+        <div class="card-head">
+          <h2>Queue</h2>
+          <button id="cancelAll" class="quiet">Cancel all</button>
+        </div>
+        <div class="card-body">
+          <div id="queueList" class="queue"></div>
+          <p class="hint">Requests already sent remain billable if canceled.</p>
+        </div>
+      </section>
+    </section>
+
+    <!-- History ----------------------------------------------------------- -->
+    <aside class="history-pane" aria-labelledby="historyHeading">
+      <div class="pane-head">
+        <h2 id="historyHeading">History</h2>
+        <span class="hint">Newest first</span>
+      </div>
+      <div class="history-scroll">
+        <div id="historyList" class="history"></div>
+      </div>
+    </aside>
+
+    <footer id="footer" class="footer"></footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
