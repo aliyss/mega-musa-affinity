@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Runtime data (default data dir is ~/.mega-musa-affinity, but --data-dir / MEGA_MUSA_HOME
+# can point at any path, including one inside the checkout)
+data/
+.mega-musa-affinity/
+handoff/
+images/
+references/
+settings.json
+budget.json
+history.json
+latest.json
+*.log
+
+# OS metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Editor / tooling
+.vscode/
+.idea/
+*.swp
